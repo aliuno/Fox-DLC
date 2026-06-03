@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="htmlTag">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fox DLC | NumDATA Cyber OS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #0f0f16; --success: #00ff88; --warning-30: #ff9f43; --warning-10: #f1c40f; --danger: #ff4757;
+            --neon-blue: #00d2ff; --neon-purple: #9b59b6; --glass-main: rgba(20, 20, 30, 0.85); --glass-panel: rgba(255, 255, 255, 0.05); --border: rgba(255, 255, 255, 0.15);
+        }
+        
+        * { box-sizing: border-box; max-width: 100%; word-wrap: break-word; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 8px; color: #fff;
+            background: url('https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1374&auto=format&fit=crop') center fixed cover no-repeat #0b0b0f;
+            background-size: cover; overflow-x: hidden;
+        }
+        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(10, 10, 20, 0.8), rgba(5, 5, 10, 0.95)); z-index: -1; }
+        
+        #loginScreen { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background-color: #111; background-position: center; background-size: cover; background-repeat: no-repeat;
+            z-index: 99999; display: flex; justify-content: center; align-items: center; padding: 10px; transition: background-image 0.5s ease;
+        }
+        #loginScreen::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 10, 15, 0.7); backdrop-filter: blur(4px); z-index: 0;
+        }
+        
+        .btn-change-bg {
+            position: absolute; top: 20px; left: 20px; background: rgba(0, 210, 255, 0.15); border: 1px solid var(--neon-blue); padding: 8px 15px; border-radius: 12px; cursor: pointer; color: #fff; font-size: 13px; font-weight: bold; z-index: 100001; backdrop-filter: blur(5px); transition: 0.3s;
+        }
+        .btn-change-bg:hover { background: rgba(0, 210, 255, 0.4); }
+        
+        .login-box { 
+            position: relative; z-index: 1; 
+            width: 100%; max-width: 350px; background: rgba(20, 20, 30, 0.85); padding: 30px 20px; border-radius: 20px; box-shadow: 0 0 30px rgba(0, 210, 255, 0.25); text-align: center; border: 1px solid rgba(0, 210, 255, 0.2); backdrop-filter: blur(10px);
+        }
+        .login-box h2 { color: var(--neon-blue); margin: 0 0 20px 0; font-size: 26px; font-weight: 900; letter-spacing: 1px; }
+        .login-box input { color: #fff !important; background: rgba(255,255,255,0.05) !important; text-align: center; font-size: 20px; letter-spacing: 4px; padding: 12px; border: 2px solid var(--neon-blue); border-radius: 12px; font-weight: bold; }
+        
+        #rayonSelectionScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 15, 0.96); backdrop-filter: blur(25px); z-index: 99998; display: none; justify-content: center; align-items: center; flex-direction: column; padding: 15px; overflow-y: auto; }
+        .rayon-btn { width: 100%; max-width: 320px; background: rgba(255, 255, 255, 0.05); border: 2px solid var(--neon-blue); color: white; padding: 16px; margin-bottom: 10px; border-radius: 14px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .rayon-btn:hover, .rayon-btn:active { background: rgba(0, 210, 255, 0.2); box-shadow: 0 0 20px var(--neon-blue); transform: scale(0.98); }
+
+        .critical-alert-banner { display: none; background: linear-gradient(135deg, #ff4757, #ff6b81); border: 1px solid #fff; padding: 12px; border-radius: 14px; margin-bottom: 15px; text-align: center; animation: pulseGlow 1.2s infinite alternate; z-index: 1000; position: relative;}
+        @keyframes pulseGlow { from { box-shadow: 0 0 8px rgba(255, 71, 87, 0.5); } to { box-shadow: 0 0 20px rgba(255, 71, 87, 1); } }
+        .critical-alert-banner h3 { margin: 0 0 5px 0; font-size: 16px; font-weight: 900; }
+        .btn-close-alert { background: #fff; color: #ff4757; width: auto; padding: 6px 20px; border-radius: 8px; font-size: 12px; border: none; cursor: pointer; font-weight: bold; }
+        
+        .container { display: none; width: 100%; max-width: 680px; margin: 0 auto; background: var(--glass-main); backdrop-filter: blur(15px); padding: 15px; border-radius: 24px; border: 1px solid var(--border); box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
+        .top-bar-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px; }
+        .action-btn { padding: 6px 12px; font-size: 11px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: white; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-back:hover { background: rgba(0, 210, 255, 0.2); border-color: var(--neon-blue); }
+        .btn-logout { background: rgba(255, 71, 87, 0.1); border-color: rgba(255, 71, 87, 0.5); color: #ff6b81; }
+        .btn-logout:hover { background: rgba(255, 71, 87, 0.3); border-color: var(--danger); color: #fff; }
+        .lang-bar { display: flex; gap: 6px; }
+        .lang-btn { padding: 6px 12px; font-size: 11px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); color: white; border-radius: 8px; cursor: pointer; }
+        .lang-btn.active { background: var(--neon-blue); border-color: var(--neon-blue); font-weight: bold; box-shadow: 0 0 10px var(--neon-blue); }
+        
+        .brand-header { text-align: center; font-size: 36px; font-weight: 900; margin-bottom: 2px; background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h1 { text-align: center; color: #bcccdf; font-size: 14px; margin: 0 0 18px 0; font-weight: bold; background: rgba(0,210,255,0.1); padding: 8px; border-radius: 10px; border: 1px dashed var(--neon-blue); }
+        
+        .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 20px; }
+        .dash-card { padding: 12px 2px; text-align: center; border-radius: 14px; color: white; font-weight: bold; font-size: 9px; border: 1px solid var(--border); }
+        .bg-total { background: rgba(44, 62, 80, 0.4); }
+        .bg-warn30 { background: rgba(230, 126, 34, 0.3); border-color: var(--warning-30); }
+        .bg-warn10 { background: rgba(241, 196, 15, 0.3); border-color: var(--warning-10); }
+        .bg-danger { background: rgba(255, 71, 87, 0.3); border-color: var(--danger); }
+        .dash-card span { display: block; font-size: 18px; margin-top: 4px; font-weight: 800; }
+        
+        .panel { background: var(--glass-panel); border: 1px solid var(--border); padding: 15px; border-radius: 20px; margin-bottom: 15px; }
+        .panel h2 { font-size: 14px; font-weight: 800; margin-top: 0; margin-bottom: 12px; color: #eccc68; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px; }
+        
+        .cabinet-panel { background: rgba(155, 89, 182, 0.03); border: 1px solid rgba(155, 89, 182, 0.4); padding: 15px; border-radius: 20px; margin: 20px 0; }
+        .cabinet-row-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; }
+        @media(min-width: 480px) { .cabinet-row-grid { grid-template-columns: 1fr 1fr; } }
+        
+        .form-element-container { margin-bottom: 12px; text-align: right; position: relative; }
+        .form-element-container label { display: block; font-size: 12px; margin-bottom: 5px; color: #bcccdf; font-weight: 600; }
+        
+        input[type="text"], input[type="date"], textarea {
+            width: 100%; color: #fff; background: rgba(255,255,255,0.05); text-align: right; font-size: 15px; padding: 12px; 
+            border: 2px solid var(--neon-blue); border-radius: 12px; font-weight: bold; outline: none; transition: background-color 0.3s ease;
+            position: relative; z-index: 10;
+        }
+
+        select {
+            display: block; width: 100%; color: #fff; background-color: #1a1a24;
+            text-align: right; font-size: 15px;
+            padding: 12px; border: 2px solid var(--neon-blue); border-radius: 12px;
+            font-weight: bold; outline: none; cursor: pointer; position: relative; z-index: 50;
+        }
+        select option { background-color: #1a1a24; color: #fff; font-weight: bold; font-size: 15px; }
+        
+        .input-success { background-color: rgba(0, 255, 136, 0.3) !important; color: #fff; border-color: var(--success) !important; }
+        .readonly-input { background-color: rgba(0,0,0,0.5) !important; color: #7f8c8d !important; border-color: rgba(255,255,255,0.1) !important; cursor: not-allowed; }
+        
+        button { width: 100%; padding: 12px; background: linear-gradient(135deg, #34495e, #2c3e50); color: white; border: none; border-radius: 12px; font-size: 13px; cursor: pointer; font-weight: bold; transition: 0.2s; position: relative; z-index: 10; }
+        button:active { transform: scale(0.98); }
+        .btn-excel { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .btn-delete-bank { background: linear-gradient(135deg, #ff4757, #c0392b); }
+        .btn-cam { background: linear-gradient(135deg, var(--neon-blue), #2980b9); margin-bottom: 12px; } 
+        .btn-cam-stop { background: linear-gradient(135deg, var(--danger), #ff4757) !important; }
+        .btn-cabinet-export { background: linear-gradient(135deg, var(--neon-purple), #8e44ad); } 
+        .btn-cabinet-clear { background: linear-gradient(135deg, #ff4757, #c0392b); margin-top: 5px; }
+        
+        .google-btn-container { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+        .btn-google-img { background: linear-gradient(135deg, #e67e22, #d35400); padding: 8px; font-size: 11px; }
+        .btn-google-search { background: #7f8c8d; padding: 8px; font-size: 11px; }
+        
+        #scanner-container { width: 100%; max-width: 100%; margin: 10px auto; border: 2px solid var(--neon-blue); border-radius: 14px; overflow: hidden; display: none; background: #000; }
+        
+        .product-card { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: rgba(15, 15, 25, 0.85); margin-bottom: 8px; border-radius: 14px; border: 1px solid var(--border); border-left: 5px solid #bdc3c7; position: relative; z-index: 10; }
+        @media(min-width: 420px) { .product-card { flex-direction: row; justify-content: space-between; align-items: center; } }
+        
+        .status-valid { border-left-color: var(--success) !important; }
+        .status-warn30 { border-left-color: var(--warning-30) !important; }
+        .status-warn10 { border-left-color: var(--warning-10) !important; }
+        .status-critical { border-left-color: var(--danger) !important; animation: flashCard 1.2s infinite alternate; }
+        
+        .btn-delete { background: rgba(255, 71, 87, 0.15); color: #ff4757; width: auto; padding: 8px 16px; border-radius: 10px; cursor: pointer; border: 1px solid rgba(255, 71, 87, 0.3); font-size: 12px;}
+        .tag { background: rgba(255,255,255,0.06); padding: 3px 6px; border-radius: 6px; font-size: 10px; margin: 1px; display: inline-block; color: #bcccdf;}
+        .tag-date { background: rgba(255, 71, 87, 0.1); color: #ff6b81; padding: 3px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; }
+        
+        .upload-compact { width: 100%; max-width: 450px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); padding: 15px; border-radius: 20px; margin-top: 25px; position: relative; z-index: 100;}
+        .batch-import-box { background: rgba(0, 210, 255, 0.05); border: 1px dashed var(--neon-blue); padding: 12px; border-radius: 12px; margin: 15px 0; }
+        .cabinet-triple-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+        .btn-merge-main { background: linear-gradient(135deg, #0984e3, #341f97); color: white; width: 100%; margin-bottom: 5px; box-shadow: 0 0 10px rgba(9, 132, 227, 0.4); }
+        
+        .toast-notification { position: fixed; bottom: -120px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 380px; background: rgba(20, 20, 30, 0.96); padding: 14px; border-radius: 16px; z-index: 99999; border: 1px solid var(--border); border-right: 6px solid var(--success); transition: bottom 0.4s; backdrop-filter: blur(10px); text-align:center;}
+        .toast-notification.show { bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="loginScreen">
+    <label for="bgImageUpload" class="btn-change-bg">🖼️ تغيير الخلفية</label>
+    <input type="file" id="bgImageUpload" accept="image/*" style="display: none;" onchange="setCustomBackground(event)">
+    
+    <div class="login-box">
+        <h2 id="txt-loginTitle">🦊 Fox DLC</h2>
+        <div style="margin-bottom: 20px; text-align: right;">
+            <label id="lbl-logPass" style="display:block; margin-bottom:8px; font-weight:bold; color:#bcccdf;">أدخل رمز المرور الإجباري (Password):</label>
+            <input type="password" id="logPass" placeholder="•••" autofocus onkeydown="if(event.key === 'Enter') verifySecureSystemLogin()">
+        </div>
+        <button type="button" class="btn-excel" onclick="verifySecureSystemLogin()">🔓 دخول الآمن</button>
+    </div>
+</div>
+
+<div id="rayonSelectionScreen">
+    <h2 id="txt-chooseRayon" style="color: var(--neon-blue); margin-bottom: 15px; font-weight: 900; text-align: center;">يرجى تحديد الرواق الخاص بك:</h2>
+    <button class="rayon-btn" onclick="selectGlobalRayon('🥤 Boissons R10')">🥤 Boissons 10</button>
+    <button class="rayon-btn" onclick="selectGlobalRayon('🧹 Droguerie R11')">🧹 Droguerie 11</button>
+    <button class="rayon-btn" onclick="selectGlobalRayon('💄 Cosmétique R12')">💄 Cosmétique 12</button>
+    <button class="rayon-btn" onclick="selectGlobalRayon('🍪 Épicerie R14')">🍪 Épicerie 14</button>
+    <button class="rayon-btn" onclick="selectGlobalRayon('🧀 PLS R25')">🧀 PLS 25</button>
+
+    <div class="upload-compact">
+        <h2 style="font-size: 13px; color: #eccc68; margin-top:0; margin-bottom:10px; text-align:right;" id="txt-sec1">📂 تحديث قاعدة بيانات المتجر (Excel/CSV)</h2>
+        <div style="margin-bottom:10px;">
+            <label for="excelBankFile" style="display: block; cursor: pointer; text-align: center; border: 2px dashed var(--neon-blue); padding: 12px; border-radius: 12px; background: rgba(0, 210, 255, 0.05); color: var(--neon-blue); font-weight: bold; font-size: 14px; position: relative; z-index: 100;">
+                📂 اضغط هنا لرفع الملف (CSV/XLSX)
+            </label>
+            <input type="file" id="excelBankFile" accept=".csv, .xlsx, .xls" style="display: none;" onclick="this.value=''" onchange="uploadAndParseFile(event)">
+        </div>
+        <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 8px;">
+            <button class="btn-excel" id="txt-btnExcel" style="background: linear-gradient(135deg, #7f8c8d, #95a5a6); cursor: default; font-size: 11px;">في انتظار رفع الملف...</button>
+            <button class="btn-delete-bank" id="btn-deleteBank" onclick="deleteLoadedBank()" title="حذف الذاكرة" style="font-size: 11px;">🗑️ مسح</button>
+        </div>
+    </div>
+</div>
+
+<div class="container" id="appMainContainer">
+    <div class="top-bar-container">
+        <div style="display: flex; gap: 8px;">
+            <button class="action-btn btn-back" id="txt-btnBack" onclick="returnToRayonSelection()">🔙 تغيير الرواق</button>
+            <button class="action-btn btn-logout" id="txt-btnLogout" onclick="logoutSystem()">🚪 تسجيل خروج</button>
+        </div>
+        <div class="lang-bar">
+            <button class="lang-btn active" id="btn-ar" onclick="changeLanguage('ar')">عربي</button>
+            <button class="lang-btn" id="btn-fr" onclick="changeLanguage('fr')">Français</button>
+            <button class="lang-btn" id="btn-en" onclick="changeLanguage('en')">English</button>
+        </div>
+    </div>
+
+    <div class="critical-alert-banner" id="globalCriticalAlertBanner">
+        <h3 id="txt-alertBannerHeader">🚨 خطير جداً | CRITICAL ALARM 🚨</h3>
+        <p id="txt-alertBannerBody">تنبيه طوارئ حرج: توجد منتجات منتهية الصلاحية!</p>
+        <button class="btn-close-alert" id="txt-alertCloseBtn" onclick="stopAlarmHandly()">🔕 إطفاء الإنذار يدوياً</button>
+    </div>
+
+    <div class="brand-header">Fox DLC</div>
+    <h1 id="txt-title">🛒 نظام مراقبة الصلاحية</h1>
+
+    <div class="dashboard">
+        <div class="dash-card bg-total"><span id="txt-dashTotal">تحت المراقبة</span><span id="dashTotal">0</span></div>
+        <div class="dash-card bg-warn30"><span id="txt-dashWarn30">متبقي ≤ 30 يوم</span><span id="dashWarn30">0</span></div>
+        <div class="dash-card bg-warn10"><span id="txt-dashWarn10">متبقي ≤ 10 أيام</span><span id="dashWarn10">0</span></div>
+        <div class="dash-card bg-danger"><span id="txt-dashDanger">حرج مخصص</span><span id="dashDanger">0</span></div>
+    </div>
+
+    <div class="panel">
+        <h2 id="txt-sec2">🔍 فحص وإدخال منتج جديد</h2>
+        <button class="btn-cam" id="camCtrlBtn" onclick="toggleLiveScanner()">📷 فتح الكاميرا (Scan)</button>
+        <div id="scanner-container"></div>
+        
+        <div class="batch-import-box">
+            <h3 id="txt-batchTitle" style="margin: 0 0 10px 0; font-size: 13px; color: var(--neon-blue);">📥 تنزيل تواريخ انتهاء الصلاحية (كود + تاريخ):</h3>
+            <label for="batchScanFile" style="display: block; cursor: pointer; text-align: center; border: 2px solid var(--neon-blue); padding: 10px; border-radius: 10px; background: rgba(0, 0, 0, 0.5); font-weight: bold; font-size: 13px; color: #fff; position: relative; z-index: 100;">
+                📂 رفع ملف الجرد (Excel/CSV)
+            </label>
+            <input type="file" id="batchScanFile" accept=".csv, .xlsx, .xls" style="display: none;" onclick="this.value=''" onchange="processBatchExpiryFile(event)">
+            <p id="batchStatusTxt" style="font-size:11px; text-align:center; color:#bcccdf; margin: 8px 0;">لم يتم رفع أي ملف بعد.</p>
+            
+            <button class="btn-merge-main" onclick="moveBatchToMainList()" id="txt-btnBatchMerge">➕ دمج المنتجات في القائمة الرئيسية</button>
+            
+            <div class="cabinet-triple-grid">
+                <button class="btn-excel" onclick="exportBatchReport('EXCEL')" style="padding: 8px; font-size: 11px; z-index: 100;" id="txt-btnBatchExcel">📊 تحميل Excel</button>
+                <button class="btn-cabinet-export" onclick="exportBatchReport('PDF')" style="padding: 8px; font-size: 11px; z-index: 100;" id="txt-btnBatchPdf">📄 تحميل PDF</button>
+                <button class="btn-delete-bank" onclick="clearBatchData()" style="padding: 8px; font-size: 11px; z-index: 100;" id="txt-btnBatchClear">🗑️ مسح</button>
+            </div>
+        </div>
+        <hr style="border:0; border-top:1px dashed rgba(255,255,255,0.1); margin:15px 0;">
+
+        <div class="form-element-container">
+            <label id="lbl-barcode">كود بار المنتج أو كود أرتيكل (اكتبه للبحث الفوري):</label>
+            <input type="text" id="barcodeInput" placeholder="أدخل الكود أو صوره..." oninput="instantSearchProduct(this.value)" onkeydown="if(event.key==='Enter') { event.preventDefault(); document.getElementById('expiryInput').focus(); }">
+        </div>
+        
+        <div class="form-element-container">
+            <label id="lbl-family">عائلة المنتج أو الكود (Famille / Code):</label>
+            <input type="text" id="familyInput" class="readonly-input" readonly placeholder="يُملأ آلياً ولا يمكن تعديله...">
+        </div>
+        
+        <div class="form-element-container">
+            <label id="lbl-name">اسم المنتج (Désignation):</label>
+            <textarea id="nameInput" rows="2" style="resize: none;" placeholder="سيظهر اسم المنتج هنا..."></textarea>
+            <div class="google-btn-container">
+                <button type="button" class="btn-google-img" onclick="searchProductOnGoogleImages()">🖼️ صورة من Google</button>
+                <button type="button" class="btn-google-search" onclick="searchProductOnGoogleStandard()">🔍 بحث Google</button>
+            </div>
+        </div>
+
+        <div class="form-element-container">
+            <label id="lbl-date">تاريخ انتهاء الصلاحية (Date de péremption / DLC):</label>
+            <input type="date" id="expiryInput" style="text-align: center; font-size: 18px;" onkeydown="if(event.key==='Enter') commitProductToList()">
+        </div>
+        <button class="btn-excel" style="background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple)); padding: 15px; font-size: 16px;" id="txt-btnCommit" onclick="commitProductToList()">إدراج المنتج للرقابة</button>
+    </div>
+
+    <div class="cabinet-panel" id="exportCabinetArea">
+        <h2 style="font-size: 14px; color: var(--neon-blue); border-bottom: 1px solid rgba(0, 210, 255, 0.1); padding-bottom: 6px; margin-top:0;" id="txt-cabTitle">⚙️ التصدير والجرد المفلتر (للقائمة الرئيسية)</h2>
+        <div class="cabinet-row-grid">
+            <div class="form-element-container">
+                <label id="lbl-cab2">الصيغة المطلوبة للتحميل (Excel / PDF):</label>
+                <select id="cabinetFormatType">
+                    <option value="EXCEL">📊 Excel File (.xlsx)</option>
+                    <option value="PDF">📄 PDF Document (.pdf)</option>
+                </select>
+            </div>
+            <div class="form-element-container">
+                <label id="lbl-cabDate">📅 جرد حتى تاريخ معين (اختياري / فارغ للكل):</label>
+                <input type="date" id="cabinetDateFilter" style="text-align: center;">
+            </div>
+        </div>
+        <button class="btn-cabinet-export" id="txt-cabBtn" onclick="executeSmartDualExport()">📥 معالجة واستخراج الملف المفلتر</button>
+        
+        <hr style="border:0; border-top:1px dashed rgba(255,255,255,0.1); margin:20px 0;">
+        
+        <div class="form-element-container">
+            <label id="lbl-purgeTitle" style="color:#ff4757; font-weight:bold;">🧹 التطهير الآلي المتقدم (Purge System):</label>
+            <div class="cabinet-row-grid" style="margin-top: 5px;">
+                <select id="purgeMode" onchange="togglePurgeDate()">
+                    <option value="EXPIRED" id="opt-purgeExpired">🔴 مسح المنتجات المنتهية فقط</option>
+                    <option value="DATE" id="opt-purgeDate">🗓️ مسح حتى تاريخ محدد...</option>
+                    <option value="ALL" id="opt-purgeAll">💣 مسح القائمة بالكامل (فورمات)</option>
+                </select>
+                <input type="date" id="purgeDateInput" style="display:none; text-align: center; border-color:#ff4757;">
+            </div>
+        </div>
+        <button class="btn-cabinet-clear" id="txt-purgeBtn" onclick="secureAdvancedPurge()">⚠️ تنفيذ التطهير الآمن</button>
+    </div>
+
+    <div class="panel"><h2 id="txt-sec3">📋 قائمة المراقبة الحالية (عناصر في خطر):</h2><div id="itemsDisplayArea"></div></div>
+    <div class="creator-signature" style="text-align:center; font-size:10px; color:#555; margin-top:20px;">المطور: أيت أو فروخ علي</div>
+</div>
+
+<div id="toastBox" class="toast-notification">
+    <div>✅ <span id="toastHeaderTitle">تم الإدراج بنجاح!</span></div>
+</div>
+
+<script>
+    window.globalBarcodeBank = {};
+    window.tempBatchItems = []; 
+    let liveMonitoredItems = JSON.parse(localStorage.getItem('NumDATA_Shared_Data')) || [];
+    let currentLang = localStorage.getItem('appLang') || 'ar';
+    let html5QrcodeScanner = null; let alarmInterval = null; let audioCtx = null; let isAlarmActive = false;
+    let activeSessionRayon = localStorage.getItem('activeSessionRayon') || '';
+
+    const translations = {
+        ar: {
+            title: "🛒 نظام مراقبة الصلاحية", chooseRayon: "يرجى تحديد الرواق الخاص بك:", sec1: "📂 تحديث قاعدة بيانات المتجر (Excel/CSV)", sec2: "🔍 فحص وإدخال منتج جديد", sec3: "📋 قائمة المراقبة الحالية (عناصر في خطر):",
+            dashTotal: "تحت المراقبة", dashWarn30: "متبقي ≤ 30 يوم", dashWarn10: "متبقي ≤ 10 أيام", dashDanger: "حرج مخصص",
+            camBtnOpen: "📷 فتح الكاميرا (Scan)", camBtnClose: "🛑 إيقاف تشغيل الكاميرا والماسح",
+            lblBarcode: "كود بار المنتج أو كود أرتيكل (اكتبه للبحث الفوري):", 
+            lblFamily: "عائلة المنتج أو الكود (Famille / Code):", famHolder: "يُملأ آلياً ولا يمكن تعديله...",
+            lblName: "اسم المنتج (Désignation):", nameHolder: "سيظهر اسم المنتج هنا...",
+            lblDate: "تاريخ انتهاء الصلاحية (Date de péremption / DLC):", btnCommit: "إدراج المنتج للرقابة",
+            emptyList: "لا توجد منتجات خاضعة للمراقبة حالياً في هذا الرواق.", 
+            loginTitle: "🦊 Fox DLC", lblLogPass: "رمز المرور الإجباري للنظام (Password):",
+            cabTitle: "⚙️ التصدير والجرد المفلتر (للقائمة الرئيسية)", cab2: "الصيغة المطلوبة للتحميل (Excel / PDF):", cabBtn: "📥 معالجة واستخراج الملف المفلتر",
+            cabDate: "📅 جرد حتى تاريخ معين (اختياري / فارغ للكل):",
+            purgeTitle: "🧹 التطهير الآلي المتقدم (Purge System):", purgeOptExpired: "🔴 مسح المنتجات المنتهية فقط", purgeOptDate: "🗓️ مسح حتى تاريخ محدد...", purgeOptAll: "💣 مسح القائمة بالكامل (فورمات)", purgeBtn: "⚠️ تنفيذ التطهير الآمن",
+            alertHeader: "🚨 خطير جداً | CRITICAL ALARM 🚨", alertClose: "🔕 إطفاء الإنذار يدوياً", 
+            fileWaiting: "في انتظار رفع الملف...", fileLoading: "⏳ جاري تحميل وفك تشفير البيانات...", uploadFail: "⚠️ فشل الرفع، حاول مجدداً", btnDeleteBank: "🗑️ مسح",
+            batchTitle: "📥 تنزيل تواريخ انتهاء الصلاحية (كود + تاريخ):", batchStatus: "لم يتم رفع أي ملف بعد.", btnBatchExcel: "📊 تحميل Excel", btnBatchPdf: "📄 تحميل PDF", btnBatchClear: "🗑️ مسح", btnBatchMerge: "➕ دمج المنتجات في القائمة الرئيسية",
+            btnBack: "🔙 تغيير الرواق", btnLogout: "🚪 تسجيل خروج"
+        },
+        fr: {
+            title: "🛒 Système de Contrôle Expiry", chooseRayon: "Veuillez sélectionner votre Rayon:", sec1: "📂 Mettre à jour la base (Excel/CSV)", sec2: "🔍 Scanner & Entrée Produit", sec3: "📋 Liste de contrôle (Éléments à risque):",
+            dashTotal: "Sous contrôle", dashWarn30: "Reste ≤ 30 J", dashWarn10: "Reste ≤ 10 J", dashDanger: "Critique",
+            camBtnOpen: "📷 Activer le Scanner", camBtnClose: "🛑 Arrêter le Scanner",
+            lblBarcode: "Code barre / EAN / Code Article:", 
+            lblFamily: "Famille du Produit / Code:", famHolder: "Remplissage auto (Lecture seule)...",
+            lblName: "Désignation du produit:", nameHolder: "Le nom du produit apparaîtra ici...",
+            lblDate: "Date de péremption / DLC:", btnCommit: "Insérer le Produit",
+            emptyList: "Aucun produit sous contrôle dans ce rayon.", 
+            loginTitle: "🦊 Fox DLC", lblLogPass: "Mot de passe obligatoire:",
+            cabTitle: "⚙️ Export & Inventaire Filtré", cab2: "Format du fichier (Excel / PDF):", cabBtn: "📥 Traiter et exporter le fichier",
+            cabDate: "📅 Expirant jusqu'au (Optionnel) :",
+            purgeTitle: "🧹 Nettoyage Automatique Avancé:", purgeOptExpired: "🔴 Produits périmés uniquement", purgeOptDate: "🗓️ Jusqu'à une date précise...", purgeOptAll: "💣 Effacer toute la liste", purgeBtn: "⚠️ Exécuter le nettoyage",
+            alertHeader: "🚨 ALERTE CRITIQUE 🚨", alertClose: "🔕 Désactiver l'Alarme", 
+            fileWaiting: "En attente du fichier...", fileLoading: "⏳ Traitement des données...", uploadFail: "⚠️ Échec du téléchargement", btnDeleteBank: "🗑️ Effacer",
+            batchTitle: "📥 Importer les DLC (Code + Date):", batchStatus: "Aucun fichier téléchargé.", btnBatchExcel: "📊 Télécharger Excel", btnBatchPdf: "📄 Télécharger PDF", btnBatchClear: "🗑️ Effacer", btnBatchMerge: "➕ Fusionner dans la liste",
+            btnBack: "🔙 Changer de Rayon", btnLogout: "🚪 Déconnecter"
+        },
+        en: {
+            title: "🛒 Smart Expiry Control OS", chooseRayon: "Please select your Rayon:", sec1: "📂 Update Store Database (Excel/CSV)", sec2: "🔍 Barcode Scan & Insert", sec3: "📋 Active Monitored Checklist (At Risk):",
+            dashTotal: "Monitored", dashWarn30: "Left ≤ 30 D", dashWarn10: "Left ≤ 10 D", dashDanger: "Critical",
+            camBtnOpen: "📷 Turn on Scanner", camBtnClose: "🛑 Stop Live Scanner",
+            lblBarcode: "Product Barcode / EAN / Code:", 
+            lblFamily: "Product Family / Code:", famHolder: "Auto-filled (Read-only)...",
+            lblName: "Product Name (Désignation):", nameHolder: "Product name will appear here...",
+            lblDate: "Expiry Date (DLC):", btnCommit: "Insert Product",
+            emptyList: "No items under supervision currently in this Rayon.", 
+            loginTitle: "🦊 Fox DLC", lblLogPass: "Enter System Master Password:",
+            cabTitle: "⚙️ Filtered Export & Inventory", cab2: "Target File Format (Excel / PDF):", cabBtn: "📥 Process & Export Manifest",
+            cabDate: "📅 Expiring up to date (Optional):",
+            purgeTitle: "🧹 Advanced Auto-Purge System:", purgeOptExpired: "🔴 Expired products only", purgeOptDate: "🗓️ Up to specific date...", purgeOptAll: "💣 Wipe entire list", purgeBtn: "⚠️ Execute Secure Purge",
+            alertHeader: "🚨 CRITICAL ALARM 🚨", alertClose: "🔕 Stop Alarm", 
+            fileWaiting: "Waiting for file...", fileLoading: "⏳ Processing Data...", uploadFail: "⚠️ Upload Failed", btnDeleteBank: "🗑️ Clear",
+            batchTitle: "📥 Import Expiry Batch (Code + Date):", batchStatus: "No file uploaded yet.", btnBatchExcel: "📊 Download Excel", btnBatchPdf: "📄 Download PDF", btnBatchClear: "🗑️ Clear", btnBatchMerge: "➕ Merge to Main List",
+            btnBack: "🔙 Change Rayon", btnLogout: "🚪 Logout"
+        }
+    };
+
+    document.addEventListener("DOMContentLoaded", function() { 
+        localStorage.setItem('appActiveUser', 'DLC PGC'); 
+        const savedBg = localStorage.getItem('customLoginBg');
+        if(savedBg) { document.getElementById('loginScreen').style.backgroundImage = `url(${savedBg})`; }
+        renderUIList(); 
+    });
+
+    function setCustomBackground(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64Img = e.target.result;
+            document.getElementById('loginScreen').style.backgroundImage = `url(${base64Img})`;
+            try { localStorage.setItem('customLoginBg', base64Img); } catch(err) { alert("⚠️ الصورة كبيرة جداً على ذاكرة المتصفح، حاول اختيار صورة بحجم أصغر."); }
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function verifySecureSystemLogin() {
+        if (document.getElementById('logPass').value.trim() === "216") {
+            document.getElementById('loginScreen').style.display = "none";
+            document.getElementById('rayonSelectionScreen').style.display = "flex";
+            localStorage.setItem('appActiveUser', 'DLC PGC');
+            try { let saved = localStorage.getItem('NumDATA_Bank_v4'); if(saved) { window.globalBarcodeBank = JSON.parse(saved); } } catch(e) {}
+            changeLanguage(currentLang);
+        } else { alert("❌ الرمز السري خاطئ!"); }
+    }
+
+    function returnToRayonSelection() {
+        document.getElementById('appMainContainer').style.display = "none";
+        document.getElementById('rayonSelectionScreen').style.display = "flex";
+    }
+
+    function logoutSystem() {
+        document.getElementById('appMainContainer').style.display = "none";
+        document.getElementById('rayonSelectionScreen').style.display = "none";
+        document.getElementById('loginScreen').style.display = "flex";
+        document.getElementById('logPass').value = '';
+        
+        const toast = document.getElementById('toastBox'); 
+        document.getElementById('toastHeaderTitle').innerText = currentLang === 'ar' ? 'تم الحفظ وتسجيل الخروج بنجاح! 🔒' : 'Déconnecté et sauvegardé avec succès! 🔒';
+        toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    }
+
+    function selectGlobalRayon(rayonName) {
+        activeSessionRayon = rayonName;
+        localStorage.setItem('activeSessionRayon', activeSessionRayon);
+        document.getElementById('rayonSelectionScreen').style.display = "none";
+        document.getElementById('appMainContainer').style.display = "block";
+        updateAppTitle(); renderUIList();
+    }
+
+    function updateAppTitle() {
+        const t = translations[currentLang] || translations['ar'];
+        document.getElementById('txt-title').innerText = t.title + " | " + activeSessionRayon;
+    }
+
+    function changeLanguage(lang) {
+        currentLang = lang; localStorage.setItem('appLang', lang);
+        const html = document.getElementById('htmlTag');
+        html.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr'); html.setAttribute('lang', lang);
+        document.querySelectorAll('.lang-bar .lang-btn').forEach(b => b.classList.remove('active'));
+        const targetBtn = document.getElementById(`btn-${lang}`); if(targetBtn) targetBtn.classList.add('active');
+
+        const t = translations[lang] || translations['ar'];
+        
+        document.getElementById('txt-chooseRayon').innerText = t.chooseRayon; updateAppTitle();
+        document.getElementById('txt-sec1').innerText = t.sec1; 
+        document.getElementById('txt-sec2').innerText = t.sec2; 
+        document.getElementById('txt-sec3').innerText = t.sec3;
+        
+        document.getElementById('lbl-barcode').innerText = t.lblBarcode; 
+        document.getElementById('lbl-family').innerText = t.lblFamily; 
+        document.getElementById('familyInput').placeholder = t.famHolder;
+        document.getElementById('lbl-name').innerText = t.lblName; 
+        document.getElementById('nameInput').placeholder = t.nameHolder;
+        document.getElementById('lbl-date').innerText = t.lblDate; 
+        document.getElementById('txt-btnCommit').innerText = t.btnCommit; 
+        
+        document.getElementById('txt-loginTitle').innerText = t.loginTitle; 
+        document.getElementById('lbl-logPass').innerText = t.lblLogPass;
+        
+        document.getElementById('txt-cabTitle').innerText = t.cabTitle; 
+        document.getElementById('lbl-cab2').innerText = t.cab2; 
+        document.getElementById('txt-cabBtn').innerText = t.cabBtn;
+        document.getElementById('lbl-cabDate').innerText = t.cabDate;
+        
+        document.getElementById('lbl-purgeTitle').innerText = t.purgeTitle;
+        document.getElementById('opt-purgeExpired').innerText = t.purgeOptExpired; 
+        document.getElementById('opt-purgeDate').innerText = t.purgeOptDate;
+        document.getElementById('opt-purgeAll').innerText = t.purgeOptAll; 
+        document.getElementById('txt-purgeBtn').innerText = t.purgeBtn;
+        
+        document.getElementById('txt-alertBannerHeader').innerText = t.alertHeader; 
+        document.getElementById('txt-alertCloseBtn').innerText = t.alertClose; 
+        
+        document.getElementById('btn-deleteBank').innerText = t.btnDeleteBank;
+        
+        document.getElementById('txt-batchTitle').innerText = t.batchTitle;
+        document.getElementById('txt-btnBatchExcel').innerText = t.btnBatchExcel;
+        document.getElementById('txt-btnBatchPdf').innerText = t.btnBatchPdf;
+        document.getElementById('txt-btnBatchClear').innerText = t.btnBatchClear;
+        document.getElementById('txt-btnBatchMerge').innerText = t.btnBatchMerge;
+        
+        document.getElementById('txt-btnBack').innerText = t.btnBack;
+        document.getElementById('txt-btnLogout').innerText = t.btnLogout;
+        
+        if(window.tempBatchItems.length === 0) document.getElementById('batchStatusTxt').innerText = t.batchStatus;
+
+        let btnExcel = document.getElementById('txt-btnExcel');
+        if(Object.keys(window.globalBarcodeBank).length === 0) { btnExcel.innerText = t.fileWaiting; btnExcel.style.background = "linear-gradient(135deg, #7f8c8d, #95a5a6)"; }
+        else { updateBankButtonText(); }
+
+        document.getElementById('txt-dashTotal').innerText = t.dashTotal;
+        document.getElementById('txt-dashWarn30').innerText = t.dashWarn30;
+        document.getElementById('txt-dashWarn10').innerText = t.dashWarn10;
+        document.getElementById('txt-dashDanger').innerText = t.dashDanger;
+
+        const camBtn = document.getElementById('camCtrlBtn'); if(camBtn) { camBtn.innerText = html5QrcodeScanner ? t.camBtnClose : t.camBtnOpen; camBtn.className = html5QrcodeScanner ? "btn-cam btn-cam-stop" : "btn-cam"; }
+        renderUIList();
+    }
+
+    function updateBankButtonText() { 
+        let keysCount = Object.keys(window.globalBarcodeBank).length;
+        if(keysCount > 0) {
+            let msg = currentLang === 'ar' ? `تم التحميل بنجاح (${Math.ceil(keysCount/2)} منتج) ✅` : `Loaded (${Math.ceil(keysCount/2)}) ✅`;
+            document.getElementById('txt-btnExcel').innerText = msg; document.getElementById('txt-btnExcel').style.background = "linear-gradient(135deg, #00b894, #00a8ff)";
+        }
+    }
+
+    function deleteLoadedBank() {
+        let pass = prompt(currentLang === 'ar' ? "🔐 تأكيد الأمان - أدخل الرمز السري للمسح:" : "🔐 Security - Enter Password:");
+        if (pass !== "216") return alert("❌ الرمز السري خاطئ!");
+        
+        window.globalBarcodeBank = {}; localStorage.removeItem('NumDATA_Bank_v4'); document.getElementById('excelBankFile').value = '';
+        changeLanguage(currentLang);
+        alert(currentLang === 'ar' ? "✅ تم مسح قاعدة البيانات بنجاح!" : "✅ Database cleared!");
+    }
+
+    function uploadAndParseFile(event) {
+        try {
+            const file = event.target.files[0]; if (!file) return;
+            let btn = document.getElementById('txt-btnExcel'); btn.innerText = translations[currentLang].fileLoading; btn.style.background = "#e67e22";
+            if (file.name.toLowerCase().endsWith('.csv')) {
+                Papa.parse(file, { header: true, skipEmptyLines: true, complete: function(results) { processParsedData(results.data); } });
+            } else {
+                const fileReader = new FileReader();
+                fileReader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'});
+                        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""}); processParsedData(rows);
+                    } catch(err) { alert("❌ عذراً، خطأ في قراءة الملف: " + err.message); }
+                };
+                fileReader.readAsArrayBuffer(file);
+            }
+        } catch(err) { alert("❌ خطأ غير متوقع: " + err.message); }
+    }
+
+    function processParsedData(rows) {
+        let added = 0;
+        rows.forEach(row => {
+            let keys = Object.keys(row);
+            let eanKey = keys.find(k => k && (k.toLowerCase().includes('ean') || k.toLowerCase().includes('barre')));
+            let codeKey = keys.find(k => k && (k.toLowerCase().includes('code article') || (k.toLowerCase().includes('code') && !k.toLowerCase().includes('barre'))));
+            let famKey = keys.find(k => k && k.toLowerCase().includes('famille'));
+            let nameKey = keys.find(k => k && (k.toLowerCase().includes('libellé') || k.toLowerCase().includes('libelle') || k.toLowerCase() === 'article'));
+            
+            if (!eanKey && !codeKey && !nameKey) { eanKey = keys[0]; codeKey = keys[1]; famKey = keys[3]; nameKey = keys[4]; }
+            let ean = eanKey ? String(row[eanKey]).replace(/["\s]/g, '') : ""; let code = codeKey ? String(row[codeKey]).replace(/["\s]/g, '') : "";
+            let fam = famKey ? String(row[famKey]).replace(/"/g, '').trim() : ""; let name = nameKey ? String(row[nameKey]).replace(/"/g, '').replace(/\s{2,}/g, ' ').trim() : "";
+            if (name && name.toLowerCase() !== "libellé article") {
+                let pData = { n: name, f: fam || code };
+                if (ean) { window.globalBarcodeBank[ean] = pData; added++; }
+                if (code) { window.globalBarcodeBank[code] = pData; added++; }
+            }
+        });
+        if (added > 0) { 
+            updateBankButtonText(); 
+            try {
+                localStorage.setItem('NumDATA_Bank_v4', JSON.stringify(window.globalBarcodeBank)); 
+            } catch(e) {
+                console.warn("Storage Quota Exceeded. Data kept in RAM.");
+                alert(currentLang === 'ar' ? "⚠️ حجم البيانات ضخم جداً. تم حفظها مؤقتاً في الذاكرة الحية (ستحتاج لرفعها مجدداً عند إغلاق التطبيق)." : "⚠️ Database too large. Kept in temporary RAM.");
+            }
+        }
+    }
+
+    function clearBatchData() {
+        if (window.tempBatchItems.length === 0 && document.getElementById('batchScanFile').value === '') return;
+        
+        let pass = prompt(currentLang === 'ar' ? "🔐 تأكيد الأمان - أدخل الرمز السري للمسح:" : "🔐 Security - Enter Password:");
+        if (pass !== "216") return alert("❌ الرمز السري خاطئ!");
+        
+        window.tempBatchItems = [];
+        document.getElementById('batchScanFile').value = '';
+        document.getElementById('batchStatusTxt').innerText = translations[currentLang].batchStatus;
+        document.getElementById('batchStatusTxt').style.color = "#bcccdf";
+        stopAlarmHandly();
+        alert(currentLang === 'ar' ? "✅ تم مسح ملف الجرد بنجاح!" : "✅ Batch data cleared!");
+    }
+
+    function moveBatchToMainList() {
+        if (!window.tempBatchItems || window.tempBatchItems.length === 0) return alert(currentLang === 'ar' ? "⚠️ لا توجد منتجات لدمجها! ارفع الملف أولاً." : "⚠️ No items to merge!");
+        
+        window.tempBatchItems.forEach(item => {
+            let formattedDate = item.date;
+            let itemDateObj = parseSmartDate(item.date);
+            if(itemDateObj) {
+                let m = String(itemDateObj.getMonth() + 1).padStart(2, '0');
+                let d = String(itemDateObj.getDate()).padStart(2, '0');
+                formattedDate = `${itemDateObj.getFullYear()}-${m}-${d}`;
+            }
+            
+            liveMonitoredItems.push({ 
+                barcode: item.barcode, 
+                name: item.name, 
+                rayon: activeSessionRayon, 
+                date: formattedDate 
+            });
+        });
+        
+        localStorage.setItem('NumDATA_Shared_Data', JSON.stringify(liveMonitoredItems));
+        renderUIList();
+        
+        window.tempBatchItems = [];
+        document.getElementById('batchScanFile').value = '';
+        document.getElementById('batchStatusTxt').innerText = translations[currentLang].batchStatus;
+        document.getElementById('batchStatusTxt').style.color = "#bcccdf";
+        stopAlarmHandly();
+        
+        alert(currentLang === 'ar' ? "✅ تم دمج المنتجات في قائمتك بنجاح! يمكنك الآن استخراجها من الزر البنفسجي أسفل التطبيق." : "✅ Items merged successfully!");
+    }
+
+    function parseSmartDate(dStr) {
+        if(!dStr) return null;
+        dStr = String(dStr).trim();
+        if(/^\d{4,5}$/.test(dStr)) {
+            let serial = parseInt(dStr, 10);
+            return new Date(1900, 0, Math.max(serial - 1, 1));
+        }
+        let p = dStr.split(/[-/]/);
+        if(p.length === 3) {
+            let y = p[0].length === 4 ? p[0] : p[2];
+            let m = p[0].length === 4 ? p[1] : p[1]; 
+            let d = p[0].length === 4 ? p[2] : p[0]; 
+            let testDate = new Date(y, m - 1, d);
+            if (!isNaN(testDate.getTime())) return testDate;
+        }
+        let fallback = new Date(dStr);
+        if(!isNaN(fallback.getTime())) return fallback;
+        
+        return null;
+    }
+
+    function processBatchExpiryFile(event) {
+        try {
+            const file = event.target.files[0]; if (!file) return;
+            document.getElementById('batchStatusTxt').innerText = currentLang === 'ar' ? "⏳ جاري المعالجة والمطابقة مع القاعدة..." : "⏳ Processing data...";
+            
+            if (file.name.toLowerCase().endsWith('.csv')) {
+                Papa.parse(file, { header: true, skipEmptyLines: true, complete: function(results) { parseBatchRows(results.data); } });
+            } else {
+                const fr = new FileReader();
+                fr.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'});
+                        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: "", raw: false}); 
+                        parseBatchRows(rows);
+                    } catch(err) { alert("❌ خطأ أثناء معالجة الإكسل: " + err.message); }
+                };
+                fr.readAsArrayBuffer(file);
+            }
+        } catch(err) { alert("❌ خطأ: " + err.message); }
+    }
+
+    function parseBatchRows(rows) {
+        window.tempBatchItems = [];
+        let hasCritical = false;
+        const currentDate = new Date(); currentDate.setHours(0,0,0,0);
+        
+        rows.forEach(row => {
+            let keys = Object.keys(row);
+            let eanKey = keys.find(k => k && (k.toLowerCase().includes('ean') || k.toLowerCase().includes('barre') || k.toLowerCase().includes('code')));
+            let dateKey = keys.find(k => k && (k.toLowerCase().includes('date') || k.toLowerCase().includes('dlc') || k.toLowerCase().includes('exp') || k.toLowerCase().includes('تاريخ')));
+            
+            if (!eanKey && !dateKey && keys.length >= 2) { eanKey = keys[0]; dateKey = keys[1]; }
+            
+            if (eanKey && dateKey) {
+                let barcode = String(row[eanKey]).trim();
+                let dateVal = String(row[dateKey]).trim();
+                let name = "غير معروف (Unknown)";
+                
+                if (window.globalBarcodeBank[barcode]) { name = window.globalBarcodeBank[barcode].n; }
+                
+                if(dateVal) { 
+                    let itemDate = parseSmartDate(dateVal);
+                    if(itemDate) {
+                        let rem = Math.ceil((itemDate - currentDate) / 86400000);
+                        if (rem <= 4) hasCritical = true; 
+                    }
+                }
+                window.tempBatchItems.push({ barcode: barcode, name: name, date: dateVal });
+            }
+        });
+        
+        let msg = currentLang === 'ar' ? `✅ تمت معالجة ${window.tempBatchItems.length} منتج.` : `✅ Processed ${window.tempBatchItems.length} items.`;
+        if (hasCritical) {
+            msg += currentLang === 'ar' ? " ⚠️ (يوجد خطر!)" : " ⚠️ (Critical!)";
+            document.getElementById('batchStatusTxt').style.color = "var(--danger)";
+            triggerContinuousSystemAlarm();
+        } else {
+            document.getElementById('batchStatusTxt').style.color = "var(--success)";
+        }
+        document.getElementById('batchStatusTxt').innerText = msg;
+    }
+
+    function exportBatchReport(format) {
+        if (!window.tempBatchItems || window.tempBatchItems.length === 0) return alert(currentLang === 'ar' ? "⚠️ يرجى رفع ملف (الكود + التاريخ) أولاً!" : "⚠️ Upload file first!");
+        
+        const currentDate = new Date(); currentDate.setHours(0,0,0,0);
+        
+        if (format === "EXCEL") {
+            const excelRows = [["DLC • PGC IMPORTED BATCH REPORT"], [`Section: ${activeSessionRayon} | Date: ${new Date().toLocaleDateString()}`], [], ["Code barre", "Désignation", "DLC Expiry", "Jours Restants"]];
+            window.tempBatchItems.forEach((item) => {
+                let rem = "N/A";
+                let itemDate = parseSmartDate(item.date);
+                if(itemDate) rem = Math.ceil((itemDate - currentDate) / 86400000);
+                excelRows.push([item.barcode, item.name, item.date, rem]);
+            });
+            const worksheet = XLSX.utils.aoa_to_sheet(excelRows), workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "Batch");
+            XLSX.writeFile(workbook, `Batch_Expiry_${activeSessionRayon.replace(/\s+/g, '_')}.xlsx`);
+        } else {
+            const { jsPDF } = window.jspdf; const doc = new jsPDF();
+            doc.setFontSize(14); doc.text("DLC * PGC BATCH REPORT", 14, 20); doc.setFontSize(9);
+            doc.text(`Rayon: ${activeSessionRayon}`, 14, 27);
+            
+            let currentY = 40; doc.text("Code", 16, currentY); doc.text("Désignation", 55, currentY); doc.text("DLC Expiry", 155, currentY); doc.text("Days", 185, currentY);
+            currentY += 8;
+            
+            window.tempBatchItems.forEach((item) => {
+                let rem = "N/A";
+                let itemDate = parseSmartDate(item.date);
+                if(itemDate) rem = Math.ceil((itemDate - currentDate) / 86400000);
+                
+                doc.text(String(item.barcode).substring(0,13), 16, currentY); 
+                doc.text(String(item.name).substring(0, 45), 55, currentY); 
+                doc.text(String(item.date), 155, currentY); 
+                doc.text(String(rem), 185, currentY);
+                currentY += 7;
+                if(currentY > 280) { doc.addPage(); currentY = 20; }
+            });
+            doc.save(`Batch_Expiry_${activeSessionRayon.replace(/\s+/g, '_')}.pdf`);
+        }
+    }
+
+    function instantSearchProduct(val) {
+        const cleanCode = String(val).replace(/[^a-zA-Z0-9]/g, '');
+        let nameInput = document.getElementById('nameInput'), familyInput = document.getElementById('familyInput');
+        if (cleanCode !== "" && window.globalBarcodeBank[cleanCode]) {
+            let pData = window.globalBarcodeBank[cleanCode]; nameInput.value = pData.n || ""; familyInput.value = pData.f || "N/A";
+            nameInput.classList.add('input-success'); familyInput.classList.add('input-success');
+            setTimeout(() => { nameInput.classList.remove('input-success'); familyInput.classList.remove('input-success'); }, 500);
+            return true;
+        }
+        return false;
+    }
+
+    function searchProductOnGoogleImages() {
+        const str = document.getElementById('nameInput').value.trim() || document.getElementById('barcodeInput').value.trim();
+        if (str) window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(str)}`, '_blank');
+    }
+    function searchProductOnGoogleStandard() {
+        const str = document.getElementById('nameInput').value.trim() || document.getElementById('barcodeInput').value.trim();
+        if (str) window.open(`https://www.google.com/search?q=${encodeURIComponent(str)}`, '_blank');
+    }
+
+    function togglePurgeDate() {
+        const mode = document.getElementById('purgeMode').value;
+        document.getElementById('purgeDateInput').style.display = mode === 'DATE' ? 'block' : 'none';
+    }
+
+    function secureAdvancedPurge() {
+        let myRayonItemsCount = liveMonitoredItems.filter(item => item.rayon === activeSessionRayon).length;
+        if (myRayonItemsCount === 0) return alert(currentLang === 'ar' ? "⚠️ قائمة رواقك فارغة أصلاً!" : "⚠️ Your list is already empty!");
+        
+        let mode = document.getElementById('purgeMode').value; let pDate = document.getElementById('purgeDateInput').value;
+        if (mode === "DATE" && !pDate) return alert(currentLang === 'ar' ? "⚠️ يرجى تحديد التاريخ أولاً!" : "⚠️ Please select a date!");
+        
+        let pass = prompt(currentLang === 'ar' ? "🔐 تأكيد الأمان - أدخل الرمز السري لتنفيذ العملية:" : "🔐 Security - Enter Password:");
+        if (pass !== "216") return alert("❌ الرمز السري خاطئ!");
+        
+        let initialLength = liveMonitoredItems.length; const currentDate = new Date(); currentDate.setHours(0,0,0,0);
+        
+        if (mode === "ALL") { 
+            liveMonitoredItems = liveMonitoredItems.filter(item => item.rayon !== activeSessionRayon); 
+        } else if (mode === "EXPIRED") {
+            liveMonitoredItems = liveMonitoredItems.filter(item => {
+                if (item.rayon !== activeSessionRayon) return true;
+                if (!item.date) return true; 
+                let itemDate = parseSmartDate(item.date); return itemDate && itemDate > currentDate; 
+            });
+        } else if (mode === "DATE") {
+            liveMonitoredItems = liveMonitoredItems.filter(item => { 
+                if (item.rayon !== activeSessionRayon) return true; 
+                if(!item.date) return true; return item.date > pDate; 
+            });
+        }
+        let deletedCount = initialLength - liveMonitoredItems.length;
+        localStorage.setItem('NumDATA_Shared_Data', JSON.stringify(liveMonitoredItems)); renderUIList();
+        alert(currentLang === 'ar' ? `✅ تم التطهير بنجاح! تم حذف ${deletedCount} منتج.` : `✅ Purged successfully! ${deletedCount} items deleted.`);
+    }
+
+    function toggleLiveScanner() {
+        const container = document.getElementById('scanner-container'), camBtn = document.getElementById('camCtrlBtn');
+        if (html5QrcodeScanner) { 
+            try {
+                html5QrcodeScanner.stop().then(() => { 
+                    html5QrcodeScanner = null; 
+                    camBtn.innerText = translations[currentLang].camBtnOpen; 
+                    camBtn.className = "btn-cam"; 
+                    container.style.display = "none";
+                }).catch(e => { html5QrcodeScanner = null; container.style.display = "none"; }); 
+            } catch(e) { html5QrcodeScanner = null; container.style.display = "none"; }
+            return; 
+        }
+        container.style.display = "block"; camBtn.innerText = "🛑 Stop"; camBtn.className = "btn-cam btn-cam-stop";
+        
+        html5QrcodeScanner = new Html5Qrcode("scanner-container");
+        html5QrcodeScanner.start(
+            { facingMode: "environment" }, 
+            { 
+                fps: 30, 
+                qrbox: { width: 280, height: 150 },
+                aspectRatio: 1.0,
+                formatsToSupport: [ 
+                    Html5QrcodeSupportedFormats.EAN_13, 
+                    Html5QrcodeSupportedFormats.EAN_8, 
+                    Html5QrcodeSupportedFormats.UPC_A, 
+                    Html5QrcodeSupportedFormats.UPC_E, 
+                    Html5QrcodeSupportedFormats.CODE_128, 
+                    Html5QrcodeSupportedFormats.CODE_39
+                ]
+            }, 
+            (txt) => {
+                document.getElementById('barcodeInput').value = txt; 
+                instantSearchProduct(txt); 
+                playQuickBeep(); 
+                toggleLiveScanner();
+            }, 
+            (err) => {}
+        ).catch(err => {
+            alert("⚠️ لم نتمكن من الوصول للكاميرا. تأكد من إعطاء الصلاحيات في المتصفح.");
+            toggleLiveScanner();
+        });
+    }
+
+    function playQuickBeep() { 
+        try { let ctx = new (window.AudioContext || window.webkitAudioContext)(); let osc = ctx.createOscillator(); osc.type = "sine"; osc.frequency.value = 850; osc.connect(ctx.destination); osc.start(); setTimeout(() => { osc.stop(); ctx.close(); }, 100); } catch(e){} 
+    }
+
+    function commitProductToList() {
+        const b = document.getElementById('barcodeInput').value.trim(), n = document.getElementById('nameInput').value.trim(), d = document.getElementById('expiryInput').value;
+        if(!n || !d) return alert("⚠️ Data Missing!");
+        liveMonitoredItems.push({ barcode: b, name: n, rayon: activeSessionRayon, date: d });
+        localStorage.setItem('NumDATA_Shared_Data', JSON.stringify(liveMonitoredItems));
+        const toast = document.getElementById('toastBox'); toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        document.getElementById('barcodeInput').value = ""; document.getElementById('nameInput').value = ""; document.getElementById('familyInput').value = ""; document.getElementById('expiryInput').value = "";
+        
+        document.getElementById('barcodeInput').focus();
+        renderUIList();
+    }
+
+    // 💡 نظام الفلترة الذكي للقائمة حسب الرواق
+    function renderUIList() {
+        const listContainer = document.getElementById('itemsDisplayArea'); if(!listContainer) return;
+        listContainer.innerHTML = '';
+        let myRayonItems = liveMonitoredItems.filter(item => item.rayon === activeSessionRayon);
+        
+        if(myRayonItems.length === 0) { 
+            listContainer.innerHTML = `<p style="text-align:center;">${translations[currentLang].emptyList}</p>`; 
+            document.getElementById('dashTotal').innerText = "0"; document.getElementById('dashWarn30').innerText = "0"; document.getElementById('dashWarn10').innerText = "0"; document.getElementById('dashDanger').innerText = "0"; 
+            return; 
+        }
+
+        // تحديد مدة الخطر حسب الرواق (الرؤية النفقية)
+        let threshold = 30; // افتراضي
+        if (activeSessionRayon.includes('PLS')) threshold = 5;
+        else if (activeSessionRayon.includes('Boissons')) threshold = 10;
+        else if (activeSessionRayon.includes('Droguerie') || activeSessionRayon.includes('Cosmétique')) threshold = 30;
+        else if (activeSessionRayon.includes('Épicerie') || activeSessionRayon.includes('Epicerie')) threshold = 30;
+        
+        const currentDate = new Date(); currentDate.setHours(0,0,0,0); 
+        let count30 = 0, count10 = 0, countDanger = 0;
+        let displayedCount = 0; // لحساب عدد المنتجات المعروضة
+        
+        myRayonItems.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        myRayonItems.forEach((item) => {
+            let realIdx = liveMonitoredItems.indexOf(item);
+            let rem = 0; if(item.date) { let itemDate = parseSmartDate(item.date); if(itemDate) rem = Math.ceil((itemDate - currentDate) / 86400000); }
+            
+            // حساب العدادات العلوية
+            if (rem <= 4) countDanger++; 
+            else if (rem <= 10) count10++; 
+            else if (rem <= 30) count30++;
+
+            // عرض المنتجات التي دخلت منطقة الخطر فقط
+            if (rem <= threshold) {
+                let cls = 'status-valid', output = `صالح (${rem} يوم)`;
+                if (rem <= 0) { cls = 'status-critical'; output = `❌ منتهي (${rem} ي)`; }
+                else if (rem <= 4) { cls = 'status-critical'; output = `🚨 حرج (${rem} ي)`; }
+                else if (rem <= 10) { cls = 'status-warn10'; output = `⏳ تنبيه 10 (${rem} ي)`; }
+                else if (rem <= 30) { cls = 'status-warn30'; output = `⏳ تنبيه 30 (${rem} ي)`; }
+                
+                const itemElement = document.createElement('div'); itemElement.className = `product-card ${cls}`;
+                itemElement.innerHTML = `<div><strong>${item.name}</strong><br><span class="tag">EAN: ${item.barcode || 'Manual'}</span><span class="tag" style="color:var(--neon-blue);">${item.rayon || 'N/A'}</span><span class="tag-date">DLC: ${item.date}</span><br><small>💡 ${output}</small></div><button class="btn-delete" onclick="unregisterItem(${realIdx})">إزالة</button>`;
+                listContainer.appendChild(itemElement);
+                displayedCount++;
+            }
+        });
+
+        // رسالة تظهر إذا كانت كل المنتجات المدخلة سليمة ومخفية
+        if (displayedCount === 0) {
+            let safeMsg = currentLang === 'ar' ? `✅ جميع المنتجات (${myRayonItems.length}) في أمان (أكثر من ${threshold} أيام).` : `✅ All ${myRayonItems.length} products are safe (more than ${threshold} days).`;
+            listContainer.innerHTML = `<p style="text-align:center; color: var(--success); font-weight: bold; background: rgba(0,255,136,0.1); padding: 10px; border-radius: 10px; border: 1px dashed var(--success);">${safeMsg}</p>`;
+        }
+
+        document.getElementById('dashTotal').innerText = myRayonItems.length; // إبقاء العدد الإجمالي كما هو
+        document.getElementById('dashWarn30').innerText = count30; 
+        document.getElementById('dashWarn10').innerText = count10; 
+        document.getElementById('dashDanger').innerText = countDanger;
+    }
+
+    function unregisterItem(idx) { 
+        if (!confirm(currentLang === 'ar' ? "هل أنت متأكد من إزالة هذا المنتج؟" : "Are you sure you want to remove this item?")) return;
+        liveMonitoredItems.splice(idx, 1); 
+        localStorage.setItem('NumDATA_Shared_Data', JSON.stringify(liveMonitoredItems)); 
+        renderUIList(); 
+    }
+
+    function executeSmartDualExport() {
+        let activeData = liveMonitoredItems.filter(item => item.rayon === activeSessionRayon); 
+        if(activeData.length === 0) return alert(currentLang === 'ar' ? "⚠️ قائمة رواقك فارغة!" : "⚠️ Empty List!");
+        
+        const dateFilter = document.getElementById('cabinetDateFilter').value;
+        if (dateFilter) { activeData = activeData.filter(item => item.date <= dateFilter); }
+        if (activeData.length === 0) return alert(currentLang === 'ar' ? "⚠️ لا توجد منتجات منتهية حتى هذا التاريخ في رواقك!" : "⚠️ No items found up to this date in your rayon!");
+        
+        const selectedFormat = document.getElementById('cabinetFormatType').value;
+        const currentDate = new Date(); currentDate.setHours(0,0,0,0);
+
+        if (selectedFormat === "EXCEL") {
+            const excelRows = [["DLC • PGC OFFICIAL LOGISTIC MANIFEST REPORT"], [`Section: ${activeSessionRayon} | Filter Until: ${dateFilter || 'All Data'}`], [], ["Code barre", "Désignation", "Rayon", "DLC Expiry", "Jours Restants"]];
+            activeData.forEach((item) => {
+                let rem = 0; if(item.date) { let itemDate = parseSmartDate(item.date); if(itemDate) rem = Math.ceil((itemDate - currentDate) / 86400000); }
+                excelRows.push([item.barcode || "Manual", item.name, item.rayon || "N/A", item.date, rem <= 0 ? "Expired" : rem]);
+            });
+            const worksheet = XLSX.utils.aoa_to_sheet(excelRows), workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "Manifest");
+            XLSX.writeFile(workbook, `Manifest_${activeSessionRayon.replace(/\s+/g, '_')}_Filtered.xlsx`);
+        } else {
+            const { jsPDF } = window.jspdf; const doc = new jsPDF();
+            doc.setFontSize(14); doc.text("DLC * PGC LOGISTICAL REPORT MANIFEST", 14, 20); doc.setFontSize(9);
+            doc.text(`Rayon: ${activeSessionRayon} | Limit Date: ${dateFilter || 'All'}`, 14, 27);
+            let currentY = 46; doc.text("Code", 16, currentY + 6); doc.text("Désignation", 55, currentY + 6); doc.text("Rayon", 130, currentY + 6); doc.text("DLC Expiry", 160, currentY + 6); doc.text("Days", 190, currentY + 6);
+            currentY += 8;
+            activeData.forEach((item) => {
+                let rem = 0; if(item.date) { let itemDate = parseSmartDate(item.date); if(itemDate) rem = Math.ceil((itemDate - currentDate) / 86400000); }
+                doc.text(String(item.barcode).substring(0,13), 16, currentY + 5); doc.text(String(item.name).substring(0, 26), 55, currentY + 5); doc.text(String(item.rayon).substring(0, 12), 130, currentY + 5); doc.text(item.date, 160, currentY + 5); doc.text(String(rem), 190, currentY + 5);
+                currentY += 7;
+            });
+            doc.save(`Manifest_${activeSessionRayon.replace(/\s+/g, '_')}_Filtered.pdf`);
+        }
+    }
+
+    function triggerContinuousSystemAlarm() {
+        if (alarmInterval) return; isAlarmActive = true; document.getElementById('globalCriticalAlertBanner').style.display = "block";
+        alarmInterval = setInterval(() => {
+            try { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); let osc = audioCtx.createOscillator(), g = audioCtx.createGain(); osc.type = "sawtooth"; osc.frequency.value = 880; g.gain.setValueAtTime(0.4, audioCtx.currentTime); osc.connect(g); g.connect(audioCtx.destination); osc.start(); setTimeout(() => osc.stop(), 150); } catch(e){}
+        }, 400);
+    }
+    function stopAlarmHandly() { if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; } isAlarmActive = false; document.getElementById('globalCriticalAlertBanner').style.display = "none"; }
+</script>
+</body>
+</html>
